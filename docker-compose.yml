@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: prompts
+      POSTGRES_USER: prompts
+      POSTGRES_PASSWORD: prompts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prompts -d prompts"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: prompts
+      RABBITMQ_DEFAULT_PASS: prompts
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/src/PromptProcessor.Api/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: prompts
+      RabbitMq__Password: prompts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/src/PromptProcessor.Worker/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Production}
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: prompts
+      RabbitMq__Password: prompts
+      Llm__Provider: ${LLM_PROVIDER:-OpenAI}
+      Llm__ApiKey: ${OPENAI_API_KEY:-}
+      Llm__Model: ${OPENAI_MODEL:-gpt-5-mini}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres-data:

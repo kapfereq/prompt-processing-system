@@ -1,0 +1,73 @@
+:root {
+  --accent: #4f46e5;
+  --accent-dark: #3730a3;
+  --accent-soft: #a5b4fc;
+  --accent-wash: #eef2ff;
+  --background: #f4f3ef;
+  --border: #e4e1da;
+  --border-strong: #cbc7bd;
+  --danger: #dc2626;
+  --danger-border: #fca5a5;
+  --danger-dark: #991b1b;
+  --danger-wash: #fef2f2;
+  --ink: #1d1d22;
+  --ink-soft: #3e3d45;
+  --muted: #8a8791;
+  --muted-strong: #66636d;
+  --placeholder: #aaa7ae;
+  --shadow-sm: 0 7px 22px rgb(35 32 25 / 5%);
+  --shadow-xs: 0 2px 8px rgb(35 32 25 / 3%);
+  --success: #16a34a;
+  --success-dark: #166534;
+  --success-wash: #f0fdf4;
+  --surface: #ffffff;
+  --surface-subtle: #faf9f7;
+  --warning: #d97706;
+  --warning-dark: #92400e;
+  --warning-wash: #fffbeb;
+  color: var(--ink);
+  background: var(--background);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100svh;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgb(79 70 229 / 25%);
+  outline-offset: 2px;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #c7d2fe;
+  color: var(--ink);
+}
