@@ -34,8 +34,7 @@ services:
       context: .
       dockerfile: backend/src/PromptProcessor.Api/Dockerfile
     environment:
-      ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts;GSS Encryption Mode=Disable
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: prompts
       RabbitMq__Password: prompts
@@ -53,7 +52,7 @@ services:
       dockerfile: backend/src/PromptProcessor.Worker/Dockerfile
     environment:
       DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Production}
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=prompts;Username=prompts;Password=prompts;GSS Encryption Mode=Disable
       RabbitMq__Host: rabbitmq
       RabbitMq__Username: prompts
       RabbitMq__Password: prompts
