@@ -34,7 +34,7 @@ function renderApp() {
   }
 }
 
-describe('Prompt Desk', () => {
+describe('Prompt processing', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
@@ -53,7 +53,7 @@ describe('Prompt Desk', () => {
     const user = userEvent.setup()
     renderApp()
 
-    await user.click(screen.getByRole('button', { name: /add another prompt/i }))
+    await user.click(screen.getByRole('button', { name: /^add prompt/i }))
     expect(screen.getByRole('textbox', { name: 'Prompt 2' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Remove prompt 2' }))
@@ -78,12 +78,12 @@ describe('Prompt Desk', () => {
       screen.getByRole('textbox', { name: 'Prompt 1' }),
       '  First task  ',
     )
-    await user.click(screen.getByRole('button', { name: /add another prompt/i }))
+    await user.click(screen.getByRole('button', { name: /^add prompt/i }))
     await user.type(
       screen.getByRole('textbox', { name: 'Prompt 2' }),
       'Second task',
     )
-    await user.click(screen.getByRole('button', { name: /queue batch/i }))
+    await user.click(screen.getByRole('button', { name: /submit batch/i }))
 
     await waitFor(() => {
       const postCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')
@@ -126,7 +126,7 @@ describe('Prompt Desk', () => {
     )
     renderApp()
 
-    expect(await screen.findByText("Couldn’t load the queue")).toBeVisible()
+    expect(await screen.findByText("Couldn’t load jobs")).toBeVisible()
     expect(
       screen.getByText('The server returned an unexpected response.'),
     ).toBeVisible()
@@ -154,10 +154,10 @@ describe('Prompt Desk', () => {
     expect(screen.getByText('Prompt cached')).toBeVisible()
     expect(
       await screen.findByText(
-        "Couldn’t refresh the queue. Showing the last known state.",
+        'Refresh failed. Showing the last known state.',
       ),
     ).toBeVisible()
-    expect(screen.queryByText("Couldn’t load the queue")).not.toBeInTheDocument()
+    expect(screen.queryByText("Couldn’t load jobs")).not.toBeInTheDocument()
   })
 
   it('polls only while a prompt is pending or processing', () => {

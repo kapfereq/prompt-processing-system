@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Activity, Layers3 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchPrompts,
@@ -47,23 +46,12 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="Prompt Desk home">
-          <span className="brand-mark">
-            <Layers3 aria-hidden="true" size={19} />
-          </span>
-          <span>
-            Prompt Desk
-            <small>Batch processor</small>
-          </span>
-        </a>
-        <div className="header-context">
-          <Activity aria-hidden="true" size={15} />
-          Processing workspace
-        </div>
+      <header className="page-header">
+        <h1>Prompt processing</h1>
+        <p>Submit prompts and track every job from queue to result.</p>
       </header>
 
-      <main className="workspace" id="top">
+      <main className="workspace">
         <PromptComposer
           error={createPrompts.error}
           isSubmitting={createPrompts.isPending}

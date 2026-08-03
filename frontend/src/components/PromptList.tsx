@@ -53,7 +53,7 @@ function PromptCard({ prompt }: { prompt: PromptDto }) {
   const detailId = `prompt-detail-${prompt.id}`
 
   return (
-    <article className={`task-card task-${prompt.status.toLowerCase()}`}>
+    <article className="task-card">
       <button
         aria-controls={detailId}
         aria-expanded={isExpanded}
@@ -62,9 +62,11 @@ function PromptCard({ prompt }: { prompt: PromptDto }) {
         type="button"
       >
         <div className="task-main">
-          <StatusBadge status={prompt.status} />
+          <div className="task-meta">
+            <StatusBadge status={prompt.status} />
+            <span className="task-time">{formatSubmittedAt(prompt.createdAt)}</span>
+          </div>
           <p>{prompt.content}</p>
-          <span className="task-time">{formatSubmittedAt(prompt.createdAt)}</span>
         </div>
         <ChevronDown
           aria-hidden="true"
@@ -147,10 +149,7 @@ export function PromptList({
   return (
     <section className="tasks-column" aria-labelledby="tasks-title">
       <div className="tasks-heading">
-        <div>
-          <span className="eyebrow">Queue</span>
-          <h2 id="tasks-title">Recent prompts</h2>
-        </div>
+        <h2 id="tasks-title">Jobs</h2>
         <div className="queue-meta" aria-live="polite">
           {isFetching && !isPending ? (
             <span className="sync-label">
@@ -160,22 +159,23 @@ export function PromptList({
           ) : activeCount > 0 ? (
             <span className="active-label">{activeCount} active</span>
           ) : null}
-          <span className="total-count">{sortedPrompts.length}</span>
+          <span className="total-count">
+            {sortedPrompts.length} {sortedPrompts.length === 1 ? 'job' : 'jobs'}
+          </span>
         </div>
       </div>
 
       {isPending && (
         <div className="state-card" role="status">
           <LoaderCircle aria-hidden="true" className="spin" size={25} />
-          <h3>Loading prompts</h3>
-          <p>Checking the latest queue state…</p>
+          <h3>Loading jobs</h3>
         </div>
       )}
 
       {!isPending && error && !hasCachedData && (
         <div className="state-card error-state" role="alert">
           <CircleAlert aria-hidden="true" size={27} />
-          <h3>Couldn’t load the queue</h3>
+          <h3>Couldn’t load jobs</h3>
           <p>{error.message}</p>
           <button className="retry-button" onClick={onRetry} type="button">
             <RotateCw aria-hidden="true" size={16} />
@@ -187,7 +187,7 @@ export function PromptList({
       {!isPending && error && hasCachedData && (
         <div className="sync-warning" role="status">
           <CircleAlert aria-hidden="true" size={17} />
-          <span>Couldn’t refresh the queue. Showing the last known state.</span>
+          <span>Refresh failed. Showing the last known state.</span>
           <button onClick={onRetry} type="button">Retry</button>
         </div>
       )}
@@ -195,8 +195,8 @@ export function PromptList({
       {!isPending && hasCachedData && sortedPrompts.length === 0 && (
         <div className="state-card empty-state">
           <Inbox aria-hidden="true" size={29} />
-          <h3>No prompts yet</h3>
-          <p>Your submitted batches will appear here.</p>
+          <h3>No jobs yet</h3>
+          <p>Submitted prompts will appear here.</p>
         </div>
       )}
 

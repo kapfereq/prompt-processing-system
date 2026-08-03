@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   LoaderCircle,
   Plus,
-  Send,
   Trash2,
 } from 'lucide-react'
 
@@ -82,9 +81,8 @@ export function PromptComposer({
     <aside className="composer-column" aria-labelledby="composer-title">
       <form className="composer-card" onSubmit={handleSubmit}>
         <div className="composer-heading">
-          <span className="eyebrow">New batch</span>
-          <h1 id="composer-title">Submit prompts</h1>
-          <p>Build a batch of up to 20 prompts and follow each result as it runs.</p>
+          <h2 id="composer-title">New prompts</h2>
+          <p>Add up to 20 prompts. Each one is processed independently.</p>
         </div>
 
         <div className="prompt-fields">
@@ -95,7 +93,7 @@ export function PromptComposer({
                 {drafts.length > 1 && (
                   <button
                     aria-label={`Remove prompt ${index + 1}`}
-                    className="icon-button remove-button"
+                    className="icon-button"
                     onClick={() => removePrompt(draft.id)}
                     type="button"
                   >
@@ -113,7 +111,7 @@ export function PromptComposer({
                 id={`prompt-${draft.id}`}
                 maxLength={4000}
                 onChange={(event) => updatePrompt(draft.id, event.target.value)}
-                placeholder="Describe the task you want processed…"
+                placeholder="Enter a prompt…"
                 rows={4}
                 value={draft.content}
               />
@@ -131,7 +129,7 @@ export function PromptComposer({
           type="button"
         >
           <Plus aria-hidden="true" size={17} />
-          Add another prompt
+          Add prompt
           <span>{drafts.length}/{MAX_PROMPTS}</span>
         </button>
 
@@ -159,13 +157,10 @@ export function PromptComposer({
         )}
 
         <button className="submit-button" disabled={isSubmitting} type="submit">
-          {isSubmitting ? (
-            <LoaderCircle aria-hidden="true" className="spin" size={18} />
-          ) : (
-            <Send aria-hidden="true" size={18} />
+          {isSubmitting && (
+            <LoaderCircle aria-hidden="true" className="spin" size={17} />
           )}
-          {isSubmitting ? 'Submitting batch…' : 'Queue batch'}
-          <span className="submit-count">{drafts.length}</span>
+          {isSubmitting ? 'Submitting…' : 'Submit batch'}
         </button>
       </form>
     </aside>
