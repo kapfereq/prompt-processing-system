@@ -4,10 +4,10 @@ using PromptProcessor.Domain;
 namespace PromptProcessor.Api.Contracts;
 
 public sealed record CreatePromptsRequest(
-    [property: Required, MinLength(1), MaxLength(20)] CreatePromptRequest[] Prompts);
+    [Required, MinLength(1), MaxLength(20)] CreatePromptRequest[] Prompts);
 
 public sealed record CreatePromptRequest(
-    [property: Required, StringLength(4_000, MinimumLength = 1)] string Content);
+    [Required, StringLength(4_000, MinimumLength = 1)] string Content);
 
 public sealed record PromptDto(
     Guid Id,
