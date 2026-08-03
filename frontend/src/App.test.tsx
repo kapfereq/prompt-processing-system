@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -24,11 +24,14 @@ function renderApp() {
     defaultOptions: { queries: { retry: false } },
   })
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>,
-  )
+  return {
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>,
+    ),
+    queryClient,
+  }
 }
 
 describe('Prompt Desk', () => {
@@ -114,6 +117,47 @@ describe('Prompt Desk', () => {
     expect(completedCard).not.toBeNull()
     await user.click(within(completedCard!).getByRole('button'))
     expect(within(completedCard!).getByText('Finished result')).toBeVisible()
+  })
+
+  it('rejects an invalid API response before rendering it', async () => {
+    const invalidPrompt = { ...makePrompt('bad', 'Pending'), status: 'Unknown' }
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify([invalidPrompt]), { status: 200 }),
+    )
+    renderApp()
+
+    expect(await screen.findByText("Couldn’t load the queue")).toBeVisible()
+    expect(
+      screen.getByText('The server returned an unexpected response.'),
+    ).toBeVisible()
+  })
+
+  it('keeps cached prompts visible when a background refresh fails', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([makePrompt('cached', 'Completed')]), {
+        status: 200,
+      }),
+    )
+    const { queryClient } = renderApp()
+
+    expect(await screen.findByText('Prompt cached')).toBeVisible()
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ title: 'Service unavailable' }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 503,
+      }),
+    )
+
+    await act(() => queryClient.refetchQueries({ queryKey: ['prompts'] }))
+
+    expect(screen.getByText('Prompt cached')).toBeVisible()
+    expect(
+      await screen.findByText(
+        "Couldn’t refresh the queue. Showing the last known state.",
+      ),
+    ).toBeVisible()
+    expect(screen.queryByText("Couldn’t load the queue")).not.toBeInTheDocument()
   })
 
   it('polls only while a prompt is pending or processing', () => {

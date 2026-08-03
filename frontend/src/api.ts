@@ -12,8 +12,34 @@ export interface PromptDto {
 }
 
 const POLL_INTERVAL_MS = 1_500
+const promptStatuses = new Set<PromptStatus>([
+  'Pending',
+  'Processing',
+  'Completed',
+  'Failed',
+])
 const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 const promptsUrl = `${apiBaseUrl}/api/prompts`
+
+function isPrompt(value: unknown): value is PromptDto {
+  if (!value || typeof value !== 'object') return false
+
+  const prompt = value as Record<string, unknown>
+  const nullableString = (field: unknown) =>
+    field === null || typeof field === 'string'
+
+  return (
+    typeof prompt.id === 'string' &&
+    typeof prompt.content === 'string' &&
+    typeof prompt.status === 'string' &&
+    promptStatuses.has(prompt.status as PromptStatus) &&
+    nullableString(prompt.result) &&
+    nullableString(prompt.errorMessage) &&
+    typeof prompt.createdAt === 'string' &&
+    nullableString(prompt.startedAt) &&
+    nullableString(prompt.completedAt)
+  )
+}
 
 async function getErrorMessage(response: Response) {
   const fallback = `Request failed with status ${response.status}.`
@@ -34,11 +60,11 @@ async function readPromptList(response: Response): Promise<PromptDto[]> {
   if (!response.ok) throw new Error(await getErrorMessage(response))
 
   const body: unknown = await response.json()
-  if (!Array.isArray(body)) {
+  if (!Array.isArray(body) || !body.every(isPrompt)) {
     throw new Error('The server returned an unexpected response.')
   }
 
-  return body as PromptDto[]
+  return body
 }
 
 export async function fetchPrompts(signal?: AbortSignal) {
