@@ -83,7 +83,7 @@ describe('Prompt processing', () => {
       screen.getByRole('textbox', { name: 'Prompt 2' }),
       'Second task',
     )
-    await user.click(screen.getByRole('button', { name: /submit batch/i }))
+    await user.click(screen.getByRole('button', { name: /submit 2 prompts/i }))
 
     await waitFor(() => {
       const postCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')
@@ -94,6 +94,9 @@ describe('Prompt processing', () => {
     })
     expect(await screen.findByText('2 prompts queued successfully.')).toBeVisible()
     expect(screen.getAllByLabelText('Status: Pending')).toHaveLength(2)
+
+    await user.type(screen.getByRole('textbox', { name: 'Prompt 1' }), 'Next')
+    expect(screen.queryByText('2 prompts queued successfully.')).not.toBeInTheDocument()
   })
 
   it('renders every lifecycle status and an expanded result', async () => {
@@ -117,6 +120,33 @@ describe('Prompt processing', () => {
     expect(completedCard).not.toBeNull()
     await user.click(within(completedCard!).getByRole('button'))
     expect(within(completedCard!).getByText('Finished result')).toBeVisible()
+  })
+
+  it('filters jobs without losing the complete queue', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          makePrompt('pending', 'Pending'),
+          makePrompt('completed', 'Completed'),
+          makePrompt('failed', 'Failed'),
+        ]),
+        { status: 200 },
+      ),
+    )
+    const user = userEvent.setup()
+    renderApp()
+
+    expect(await screen.findByText('Prompt pending')).toBeVisible()
+    await user.click(
+      screen.getByRole('button', { name: 'Completed: 1 job' }),
+    )
+
+    expect(screen.getByText('Prompt completed')).toBeVisible()
+    expect(screen.queryByText('Prompt pending')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'All: 3 jobs' }))
+    expect(screen.getByText('Prompt pending')).toBeVisible()
+    expect(screen.getByText('Prompt failed')).toBeVisible()
   })
 
   it('rejects an invalid API response before rendering it', async () => {

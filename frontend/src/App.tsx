@@ -44,11 +44,30 @@ function App() {
     )
   }
 
+  const handleEdit = () => {
+    if (notice) setNotice(null)
+    if (createPrompts.error) createPrompts.reset()
+  }
+
   return (
     <div className="app-shell">
-      <header className="page-header">
-        <h1>Prompt processing</h1>
-        <p>Submit prompts and track every job from queue to result.</p>
+      <header className="app-header">
+        <div className="header-inner">
+          <div>
+            <h1>Prompt processing</h1>
+            <p>Submit and monitor asynchronous language model jobs.</p>
+          </div>
+          <div
+            className="processing-path"
+            aria-label="Processing path: API, queue, worker"
+          >
+            <span className="path-step">API</span>
+            <span className="path-line" aria-hidden="true" />
+            <span className="path-step">QUEUE</span>
+            <span className="path-line" aria-hidden="true" />
+            <span className="path-step">WORKER</span>
+          </div>
+        </div>
       </header>
 
       <main className="workspace">
@@ -56,6 +75,7 @@ function App() {
           error={createPrompts.error}
           isSubmitting={createPrompts.isPending}
           notice={notice}
+          onEdit={handleEdit}
           onSubmit={handleSubmit}
         />
         <PromptList
