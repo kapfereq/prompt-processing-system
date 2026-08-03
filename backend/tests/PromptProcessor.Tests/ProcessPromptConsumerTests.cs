@@ -75,9 +75,23 @@ public sealed class ProcessPromptConsumerTests
             serviceCollection.AddSingleton<IOptions<LlmOptions>>(
                 Options.Create(new LlmOptions { TimeoutSeconds = 5 }));
             serviceCollection.AddMassTransitTestHarness(registration =>
-                registration.AddConsumer<ProcessPromptConsumer>());
+            {
+                registration.SetTestTimeouts(
+                    testTimeout: TimeSpan.FromSeconds(30),
+                    testInactivityTimeout: TimeSpan.FromSeconds(10));
+                registration.AddConsumer<ProcessPromptConsumer>();
+            });
 
             var services = serviceCollection.BuildServiceProvider(validateScopes: true);
+
+            // Compile the EF model before starting MassTransit's inactivity timer.
+            // On a cold test process this can otherwise use the whole default timeout.
+            await using (var scope = services.CreateAsyncScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<PromptDbContext>();
+                await dbContext.Database.EnsureCreatedAsync();
+            }
+
             var harness = services.GetRequiredService<ITestHarness>();
             await harness.Start();
             return new ConsumerFixture(services, harness);
@@ -95,7 +109,8 @@ public sealed class ProcessPromptConsumerTests
         {
             await harness.Bus.Publish(new ProcessPrompt(promptId));
             var consumer = harness.GetConsumerHarness<ProcessPromptConsumer>();
-            Assert.True(await consumer.Consumed.Any<ProcessPrompt>());
+            Assert.True(await consumer.Consumed.Any<ProcessPrompt>(consumed =>
+                consumed.Context.Message.PromptId == promptId));
         }
 
         public async Task<PromptJob> LoadAsync(Guid promptId)

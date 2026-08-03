@@ -37,7 +37,15 @@ internal sealed class ProcessPromptConsumer(
         if (job.Status == PromptStatus.Pending)
         {
             job.MarkAsProcessing();
-            await dbContext.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                logger.LogInformation("Another worker claimed prompt job {PromptId}", job.Id);
+                return;
+            }
         }
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

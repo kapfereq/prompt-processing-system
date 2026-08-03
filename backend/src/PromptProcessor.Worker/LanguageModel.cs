@@ -1,3 +1,6 @@
+using System.ClientModel;
+using System.ClientModel.Primitives;
+using OpenAI;
 using OpenAI.Chat;
 
 namespace PromptProcessor.Worker;
@@ -13,7 +16,10 @@ internal sealed class OpenAiLanguageModelClient : ILanguageModelClient
 
     public OpenAiLanguageModelClient(LlmOptions options)
     {
-        _client = new ChatClient(options.Model, options.ApiKey!);
+        _client = new ChatClient(
+            options.Model,
+            new ApiKeyCredential(options.ApiKey!),
+            new OpenAIClientOptions { RetryPolicy = new ClientRetryPolicy(options.MaxRetries) });
     }
 
     public async Task<string> CompleteAsync(string prompt, CancellationToken cancellationToken)
@@ -46,5 +52,6 @@ internal sealed class LlmOptions
     public string Provider { get; set; } = "OpenAI";
     public string? ApiKey { get; set; }
     public string Model { get; set; } = "gpt-5-mini";
+    public int MaxRetries { get; set; } = 2;
     public int TimeoutSeconds { get; set; } = 60;
 }

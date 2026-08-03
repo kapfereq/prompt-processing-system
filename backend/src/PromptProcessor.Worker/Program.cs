@@ -19,6 +19,7 @@ builder.Services
         options.Provider.Equals("Fake", StringComparison.OrdinalIgnoreCase),
         "Llm:Provider must be OpenAI or Fake.")
     .Validate(options => !string.IsNullOrWhiteSpace(options.Model), "Llm:Model is required.")
+    .Validate(options => options.MaxRetries is >= 0 and <= 5, "Llm:MaxRetries must be between 0 and 5.")
     .Validate(options => options.TimeoutSeconds is > 0 and <= 600,
         "Llm:TimeoutSeconds must be between 1 and 600.")
     .Validate(options =>
@@ -34,7 +35,8 @@ builder.Services
 var connectionString = builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("ConnectionStrings:Postgres is required.");
 
-builder.Services.AddDbContext<PromptDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<PromptDbContext>(options =>
+    options.UseNpgsql(connectionString, postgres => postgres.EnableRetryOnFailure(3)));
 builder.Services.AddSingleton<ILanguageModelClient>(services =>
 {
     var options = services.GetRequiredService<IOptions<LlmOptions>>().Value;

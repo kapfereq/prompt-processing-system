@@ -16,15 +16,27 @@ builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => poli
     .AllowAnyMethod()));
 builder.Services.AddDbContext<PromptDbContext>(options => options.UseNpgsql(
     builder.Configuration.GetConnectionString("Postgres")
-    ?? throw new InvalidOperationException("ConnectionStrings:Postgres is required.")));
-builder.Services.AddMassTransit(bus => bus.UsingRabbitMq((context, rabbit) =>
+    ?? throw new InvalidOperationException("ConnectionStrings:Postgres is required."),
+    postgres => postgres.EnableRetryOnFailure(3)));
+builder.Services.AddMassTransit(bus =>
 {
-    rabbit.Host(rabbitMq["Host"] ?? "rabbitmq", rabbitMq["VirtualHost"] ?? "/", host =>
+    bus.AddEntityFrameworkOutbox<PromptDbContext>(outbox =>
     {
-        host.Username(rabbitMq["Username"] ?? "guest");
-        host.Password(rabbitMq["Password"] ?? "guest");
+        outbox.UsePostgres();
+        outbox.UseBusOutbox();
+        outbox.DisableInboxCleanupService();
+        outbox.QueryDelay = TimeSpan.FromSeconds(1);
     });
-}));
+
+    bus.UsingRabbitMq((context, rabbit) =>
+    {
+        rabbit.Host(rabbitMq["Host"] ?? "rabbitmq", rabbitMq["VirtualHost"] ?? "/", host =>
+        {
+            host.Username(rabbitMq["Username"] ?? "guest");
+            host.Password(rabbitMq["Password"] ?? "guest");
+        });
+    });
+});
 
 var app = builder.Build();
 
@@ -35,6 +47,10 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 app.UseCors("Frontend");
 app.MapOpenApi();
+app.MapGet("/health", async (PromptDbContext db, CancellationToken cancellationToken) =>
+    await db.Database.CanConnectAsync(cancellationToken)
+        ? Results.Ok(new { status = "healthy" })
+        : Results.Problem("Database is unavailable.", statusCode: StatusCodes.Status503ServiceUnavailable));
 app.MapControllers();
 
 await app.RunAsync();

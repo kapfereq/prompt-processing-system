@@ -26,12 +26,12 @@ public sealed class PromptsController(PromptDbContext db, IPublishEndpoint publi
         var jobs = request.Prompts.Select(prompt => new PromptJob(prompt.Content)).ToArray();
 
         db.PromptJobs.AddRange(jobs);
-        await db.SaveChangesAsync(cancellationToken);
-
         foreach (var job in jobs)
         {
             await publisher.Publish(new ProcessPrompt(job.Id), cancellationToken);
         }
+
+        await db.SaveChangesAsync(cancellationToken);
 
         return Accepted(jobs.Select(PromptDto.From).ToArray());
     }

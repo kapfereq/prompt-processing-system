@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PromptProcessor.Infrastructure;
@@ -11,9 +12,11 @@ using PromptProcessor.Infrastructure;
 namespace PromptProcessor.Infrastructure.Migrations
 {
     [DbContext(typeof(PromptDbContext))]
-    partial class PromptDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260803101926_AddTransactionalOutbox")]
+    partial class AddTransactionalOutbox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
