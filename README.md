@@ -38,6 +38,11 @@ Open:
 - OpenAPI document: <http://localhost:8080/openapi/v1.json>
 - RabbitMQ management: <http://localhost:15672> (`prompts` / `prompts`)
 
+The published ports listen on localhost only. PostgreSQL and RabbitMQ keep their
+data in named Docker volumes, so restarting the stack does not discard queued or
+stored jobs. Run `docker compose down --volumes` when you want a clean database and
+queue.
+
 For an offline UI or queue demo, set `LLM_PROVIDER=Fake` and
 `DOTNET_ENVIRONMENT=Demo`. The real OpenAI provider is the default and the fake
 provider cannot be enabled accidentally in a production environment.
@@ -111,6 +116,16 @@ npm test
 npm run lint
 ```
 
+Full Compose smoke test (uses the fake model and never consumes API credits):
+
+```bash
+bash scripts/smoke-test.sh
+```
+
+The script requires Bash, curl, and jq; these are already available on the Ubuntu CI
+runner. It starts the complete stack, submits a two-prompt batch, waits for both jobs
+to complete, and always removes its containers and test volumes.
+
 Set `VITE_API_URL` only when the API runs at a different address.
 
 ## Project structure
@@ -129,26 +144,28 @@ frontend/
 
 - A queue message contains only the job ID. The prompt remains in PostgreSQL and is
   not duplicated in RabbitMQ.
+- MassTransit's transactional outbox stores each job and its outgoing command in one
+  PostgreSQL transaction. Broker downtime can delay delivery, but cannot strand a
+  job between the database and RabbitMQ.
 - The domain object owns valid status transitions instead of exposing public setters.
-- A redelivered message is ignored after a job reaches a terminal state.
+- A redelivered message is ignored after a job reaches a terminal state, and
+  optimistic concurrency prevents two workers from claiming the same pending job.
 - The worker has bounded concurrency so a burst of submitted prompts does not create
   an unbounded number of model calls.
+- The OpenAI client retries a small number of transient requests inside the job's
+  overall timeout; exhausted or permanent failures move the job to `Failed`.
 - Validation limits both batch size and prompt length. API keys stay in worker
   configuration and are never returned to the browser.
 - Polling stops when no job is pending or processing.
-
-There is a deliberate dual-write boundary between storing a job and publishing its
-message. In a production system, the next reliability step would be MassTransit's
-transactional outbox. It is documented rather than hidden behind a large amount of
-infrastructure in this small exercise.
+- PostgreSQL and RabbitMQ use named volumes; exposed development ports bind only to
+  the local machine.
 
 ## Possible next steps
 
-- transactional outbox and inbox;
-- retry policy for transient provider failures;
 - pagination and tenant isolation;
 - metrics for queue time and processing time;
-- integration tests against real PostgreSQL and RabbitMQ containers.
+- stale-processing recovery and provider-level idempotency;
+- authentication and per-user rate limits for a public deployment.
 
 ## License
 

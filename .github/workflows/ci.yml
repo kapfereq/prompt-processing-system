@@ -14,7 +14,8 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet restore PromptProcessor.sln
-      - run: dotnet build PromptProcessor.sln --configuration Release --no-restore
+      - run: dotnet build PromptProcessor.sln --configuration Release --no-restore --property:TreatWarningsAsErrors=true
+      - run: dotnet format PromptProcessor.sln --verify-no-changes --no-restore
       - run: dotnet test PromptProcessor.sln --configuration Release --no-build
 
   frontend:
@@ -36,6 +37,8 @@ jobs:
 
   containers:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose build
+      - name: Run end-to-end smoke test
+        run: bash scripts/smoke-test.sh
